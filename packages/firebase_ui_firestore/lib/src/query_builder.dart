@@ -73,6 +73,7 @@ class FirestoreQueryBuilder<Document> extends StatefulWidget {
     required this.builder,
     this.pageSize = 10,
     this.child,
+    this.shouldListenForUpdates = true,
   }) : assert(pageSize > 1, 'Cannot have a pageSize lower than 1');
 
   /// The query that will be paginated.
@@ -92,6 +93,9 @@ class FirestoreQueryBuilder<Document> extends StatefulWidget {
   /// Since this widget is not created within [builder], it won't rebuild
   /// when the query emits an update.
   final Widget? child;
+
+  /// Should listen on the query or fetch data once
+  final bool shouldListenForUpdates;
 
   @override
   // ignore: library_private_types_in_public_api
@@ -171,8 +175,13 @@ class _FirestoreQueryBuilderState<Document>
         1;
 
     final query = widget.query.limit(expectedDocsCount);
-
-    _querySubscription = query.snapshots().listen(
+    late final Stream<QuerySnapshot<Document>> stream;
+    if (widget.shouldListenForUpdates) {
+      stream = query.snapshots();
+    } else {
+      stream = Stream.fromFuture(query.get());
+    }
+    _querySubscription = stream.listen(
       (event) {
         setState(() {
           if (nextPage) {
@@ -432,6 +441,7 @@ class FirestoreListView<Document> extends FirestoreQueryBuilder<Document> {
     required super.query,
     required FirestoreItemBuilder<Document> itemBuilder,
     super.pageSize,
+    super.shouldListenForUpdates = true,
     FirestoreLoadingBuilder? loadingBuilder,
     FirestoreFetchingIndicatorBuilder? fetchingIndicatorBuilder,
     FirestoreErrorBuilder? errorBuilder,
