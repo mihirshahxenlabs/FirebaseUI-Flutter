@@ -261,6 +261,24 @@ class _FirestoreTableState extends State<FirestoreDataTable> {
     );
   }
 
+  final ScrollController _horizontalScrollController = ScrollController();
+  final FocusNode _focusNode = FocusNode();
+
+  void _handleKeyEvent(KeyEvent event) {
+    if (event is KeyDownEvent) {
+      double scrollAmount = 50.0; // Adjust scroll speed
+      double offset = _horizontalScrollController.offset;
+
+      if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+        _horizontalScrollController.jumpTo((offset - scrollAmount)
+            .clamp(0.0, _horizontalScrollController.position.maxScrollExtent));
+      } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+        _horizontalScrollController.jumpTo((offset + scrollAmount)
+            .clamp(0.0, _horizontalScrollController.position.maxScrollExtent));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
@@ -290,31 +308,43 @@ class _FirestoreTableState extends State<FirestoreDataTable> {
                           onPressed: source.onDeleteSelectedItems,
                         ),
                     ];
-                    return PaginatedDataTable(
-                      source: source,
-                      onSelectAll: selectionEnabled ? source.onSelectAll : null,
-                      onPageChanged: widget.onPageChanged,
-                      showCheckboxColumn: widget.showCheckboxColumn,
-                      arrowHeadColor: widget.arrowHeadColor,
-                      checkboxHorizontalMargin: widget.checkboxHorizontalMargin,
-                      columnSpacing: widget.columnSpacing,
-                      dataRowMaxHeight: widget.dataRowMaxHeight,
-                      dataRowMinHeight: widget.dataRowMinHeight,
-                      dragStartBehavior: widget.dragStartBehavior,
-                      headingRowHeight: widget.headingRowHeight,
-                      horizontalMargin: widget.horizontalMargin,
-                      rowsPerPage: widget.rowsPerPage,
-                      showFirstLastButtons: widget.showFirstLastButtons,
-                      sortAscending: widget.sortAscending,
-                      sortColumnIndex: widget.sortColumnIndex,
-                      header: actions.isEmpty
-                          ? null
-                          : (widget.header ?? const SizedBox()),
-                      actions: actions.isEmpty ? null : actions,
-                      columns: [
-                        for (final head in widget.columnLabels.values)
-                          DataColumn(label: head)
-                      ],
+                    return KeyboardListener(
+                      focusNode: _focusNode,
+                      onKeyEvent: _handleKeyEvent,
+                      child: Scrollbar(
+                        controller: _horizontalScrollController,
+                        thumbVisibility: true,
+                        child: PaginatedDataTable(
+                          source: source,
+                          onSelectAll:
+                              selectionEnabled ? source.onSelectAll : null,
+                          onPageChanged: widget.onPageChanged,
+                          showCheckboxColumn: widget.showCheckboxColumn,
+                          arrowHeadColor: widget.arrowHeadColor,
+                          checkboxHorizontalMargin:
+                              widget.checkboxHorizontalMargin,
+                          columnSpacing: widget.columnSpacing,
+                          dataRowMaxHeight: widget.dataRowMaxHeight,
+                          dataRowMinHeight: widget.dataRowMinHeight,
+                          dragStartBehavior: widget.dragStartBehavior,
+                          headingRowHeight: widget.headingRowHeight,
+                          horizontalMargin: widget.horizontalMargin,
+                          rowsPerPage: widget.rowsPerPage,
+                          showFirstLastButtons: widget.showFirstLastButtons,
+                          sortAscending: widget.sortAscending,
+                          sortColumnIndex: widget.sortColumnIndex,
+                          header: actions.isEmpty
+                              ? null
+                              : (widget.header ?? const SizedBox()),
+                          actions: actions.isEmpty ? null : actions,
+                          columns: [
+                            for (final head in widget.columnLabels.values)
+                              DataColumn(label: head)
+                          ],
+                          showEmptyRows: false,
+                          controller: _horizontalScrollController,
+                        ),
+                      ),
                     );
                   },
                 );
